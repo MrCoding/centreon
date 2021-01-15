@@ -22,9 +22,9 @@ declare(strict_types=1);
 
 namespace Centreon\Application\Controller;
 
-use Centreon\Domain\HostConfiguration\UseCase\V21\FindHostCategories;
+use Centreon\Domain\HostConfiguration\UseCase\V21\HostCategory\FindHostCategories;
 use Centreon\Domain\RequestParameters\Interfaces\RequestParametersInterface;
-use Centreon\Infrastructure\HostConfiguration\API\Model\HostCategoryV21Factory;
+use Centreon\Infrastructure\HostConfiguration\API\Model\HostCategory\HostCategoryV21Factory;
 use FOS\RestBundle\View\View;
 
 /**

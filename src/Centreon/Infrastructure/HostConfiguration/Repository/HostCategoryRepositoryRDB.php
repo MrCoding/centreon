@@ -22,7 +22,11 @@ declare(strict_types=1);
 
 namespace Centreon\Infrastructure\HostConfiguration\Repository;
 
-use Centreon\Domain\HostConfiguration\Interfaces\HostCategoryReadRepositoryInterface;
+use Centreon\Domain\Common\Assertion\Assertion;
+use Centreon\Domain\HostConfiguration\Interfaces\HostCategory\HostCategoryReadRepositoryInterface;
+use Centreon\Domain\HostConfiguration\Interfaces\HostCategory\HostCategoryWriteRepositoryInterface;
+use Centreon\Domain\HostConfiguration\Model\HostCategory;
+use Centreon\Domain\Repository\RepositoryException;
 use Centreon\Domain\RequestParameters\RequestParameters;
 use Centreon\Infrastructure\DatabaseConnection;
 use Centreon\Infrastructure\HostConfiguration\Repository\Model\HostCategoryFactoryRdb;
@@ -35,7 +39,9 @@ use Centreon\Infrastructure\RequestParameters\SqlRequestParametersTranslator;
  *
  * @package Centreon\Infrastructure\HostConfiguration\Repository
  */
-class HostCategoryRepositoryRDB extends AbstractRepositoryDRB implements HostCategoryReadRepositoryInterface
+class HostCategoryRepositoryRDB extends AbstractRepositoryDRB implements
+    HostCategoryReadRepositoryInterface,
+    HostCategoryWriteRepositoryInterface
 {
     /**
      * @var SqlRequestParametersTranslator
@@ -53,8 +59,26 @@ class HostCategoryRepositoryRDB extends AbstractRepositoryDRB implements HostCat
 
     /**
      * @inheritDoc
+     * @throws \Assert\AssertionFailedException
      */
-    public function findHostCategories(): array
+    public function find(int $categoryId): ?HostCategory
+    {
+        $statement = $this->db->prepare(
+            $this->translateDbName('SELECT * FROM `:db`.hostcategories WHERE hc_id = :id')
+        );
+        $statement->bindValue(':id', $categoryId, \PDO::PARAM_INT);
+        $statement->execute();
+
+        if (($result = $statement->fetch(\PDO::FETCH_ASSOC)) !== false) {
+            return HostCategoryFactoryRdb::create($result);
+        }
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function findAll(): array
     {
         $this->sqlRequestTranslator->setConcordanceArray([
             'id' => 'hc_id',
@@ -66,6 +90,9 @@ class HostCategoryRepositoryRDB extends AbstractRepositoryDRB implements HostCat
             'is_activated',
             new class implements NormalizerInterface
             {
+                /**
+                 * @inheritDoc
+                 */
                 public function normalize($valueToNormalize)
                 {
                     if (is_bool($valueToNormalize)) {
@@ -110,5 +137,28 @@ class HostCategoryRepositoryRDB extends AbstractRepositoryDRB implements HostCat
             $hostCategories[] = HostCategoryFactoryRdb::create($record);
         }
         return $hostCategories;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws \Assert\AssertionFailedException
+     */
+    public function findByName(string $hostCategoryName): ?HostCategory
+    {
+        if (empty($hostCategoryName)) {
+            return null;
+        }
+
+        $statement = $this->db->prepare(
+            $this->translateDbName('SELECT * FROM `:db`.hostcategories WHERE hc_name = :name')
+        );
+
+        $statement->bindValue(':name', $hostCategoryName, \PDO::PARAM_STR);
+        $statement->execute();
+
+        if (($result = $statement->fetch(\PDO::FETCH_ASSOC)) !== false) {
+            return HostCategoryFactoryRdb::create($result);
+        }
+        return null;
     }
 }

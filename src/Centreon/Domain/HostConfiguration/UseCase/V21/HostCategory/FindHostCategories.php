@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright 2005 - 2020 Centreon (https://www.centreon.com/)
+ * Copyright 2005 - 2021 Centreon (https://www.centreon.com/)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,9 @@
  */
 declare(strict_types=1);
 
-namespace Centreon\Domain\HostConfiguration\UseCase\V21;
+namespace Centreon\Domain\HostConfiguration\UseCase\V21\HostCategory;
 
-use Centreon\Domain\HostConfiguration\Exception\HostCategoryException;
-use Centreon\Domain\HostConfiguration\Interfaces\HostCategoryReadRepositoryInterface;
+use Centreon\Domain\HostConfiguration\HostCategoryService;
 
 /**
  * This class is designed to represent a use case to find all host categories.
@@ -33,18 +32,18 @@ use Centreon\Domain\HostConfiguration\Interfaces\HostCategoryReadRepositoryInter
 class FindHostCategories
 {
     /**
-     * @var HostCategoryReadRepositoryInterface
+     * @var HostCategoryService
      */
-    private $repository;
+    private $categoryService;
 
     /**
      * FindHostCategories constructor.
      *
-     * @param HostCategoryReadRepositoryInterface $repository
+     * @param HostCategoryService $categoryService
      */
-    public function __construct(HostCategoryReadRepositoryInterface $repository)
+    public function __construct(HostCategoryService $categoryService)
     {
-        $this->repository = $repository;
+        $this->categoryService = $categoryService;
     }
 
     /**
@@ -56,12 +55,7 @@ class FindHostCategories
     public function execute(): FindHostCategoriesResponse
     {
         $response = new FindHostCategoriesResponse();
-        try {
-            $hostCategories = $this->repository->findHostCategories();
-            $response->setHostCategories($hostCategories);
-        } catch (\Throwable $ex) {
-            HostCategoryException::searchHostCategoriesException($ex);
-        }
+        $response->setHostCategories($this->categoryService->findAll());
         return $response;
     }
 }
